@@ -29,11 +29,17 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import io.github.maksymdolgykh.dropwizard.micrometer.MicrometerBundle;
+import io.github.maksymdolgykh.dropwizard.micrometer.MicrometerHttpFilter;
+import io.github.maksymdolgykh.dropwizard.micrometer.MicrometerJdbiTimingCollector;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.time.temporal.ChronoUnit;
+import java.util.EnumSet;
 import java.util.Optional;
+import javax.servlet.DispatcherType;
+import javax.servlet.FilterRegistration;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.Response;
@@ -78,6 +84,7 @@ public class CatalogApplication extends Application<CatalogApplicationConfig> {
           InvocationTargetException, IOException, SQLException {
     final JdbiFactory factory = new JdbiFactory();
     final Jdbi jdbi = factory.build(environment, catalogConfig.getDataSourceFactory(), "mysql3");
+    jdbi.setTimingCollector(new MicrometerJdbiTimingCollector());
 
     SqlLogger sqlLogger =
         new SqlLogger() {
@@ -130,6 +137,10 @@ public class CatalogApplication extends Application<CatalogApplicationConfig> {
     EventPubSub.start();
     // Register Event publishers
     registerEventPublisher(catalogConfig);
+
+    FilterRegistration.Dynamic micrometerFilter =
+        environment.servlets().addFilter("MicrometerHttpFilter", new MicrometerHttpFilter());
+    micrometerFilter.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
   }
 
   @SneakyThrows
@@ -153,6 +164,7 @@ public class CatalogApplication extends Application<CatalogApplicationConfig> {
             return configuration.getHealthConfiguration();
           }
         });
+    bootstrap.addBundle(new MicrometerBundle());
     super.initialize(bootstrap);
   }
 
