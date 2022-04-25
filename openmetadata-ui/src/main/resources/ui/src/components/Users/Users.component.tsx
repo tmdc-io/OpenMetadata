@@ -13,12 +13,13 @@
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { AxiosError, AxiosResponse } from 'axios';
-import { isNil } from 'lodash';
+import { isNil, toLower } from 'lodash';
 import { observer } from 'mobx-react';
 import React, { Fragment, RefObject, useEffect, useState } from 'react';
 import Select, { MultiValue } from 'react-select';
 import AppState from '../../AppState';
 import { getTeams } from '../../axiosAPIs/teamsAPI';
+import { TERM_ADMIN, TERM_USER } from '../../constants/constants';
 import { filterList, observerOptions } from '../../constants/Mydata.constants';
 import { AssetsType } from '../../enums/entity.enum';
 import { FeedFilter } from '../../enums/mydata.enum';
@@ -92,6 +93,7 @@ const Users = ({
   paging,
   updateUserDetails,
   isAdminUser,
+  isLoggedinUser,
 }: Props) => {
   const [activeTab, setActiveTab] = useState(1);
   const [fieldListVisible, setFieldListVisible] = useState<boolean>(false);
@@ -155,19 +157,35 @@ const Users = ({
 
   const handleRolesChange = () => {
     // filter out the roles , and exclude the admin one
-    const updatedRoles = selectedRoles.filter((role) => role.value !== 'admin');
+    const updatedRoles = selectedRoles.filter(
+      (role) => role.value !== toLower(TERM_ADMIN)
+    );
 
-    // get the admin role and send it as boolean value `iaAdmin=Boolean(isAdmin)
-    const isAdmin = selectedRoles.find((role) => role.value === 'admin');
+    // get the admin role and send it as boolean value `isAdmin=Boolean(isAdmin)
+    const isAdmin = selectedRoles.find(
+      (role) => role.value === toLower(TERM_ADMIN)
+    );
     updateUserDetails({
-      roles: updatedRoles.map((role) => role.value),
+      roles: updatedRoles.map((item) => {
+        const roleId = item.value;
+        const role = roles.find((r) => r.id === roleId);
+
+        return { id: roleId, type: 'role', name: role?.name || '' };
+      }),
       isAdmin: Boolean(isAdmin),
     });
 
     setIsRolesEdit(false);
   };
   const handleTeamsChange = () => {
-    updateUserDetails({ teams: selectedTeams.map((team) => team.value) });
+    updateUserDetails({
+      teams: selectedTeams.map((item) => {
+        const teamId = item.value;
+        const team = teams.find((t) => t.id === teamId);
+
+        return { id: teamId, type: 'team', name: team?.name || '' };
+      }),
+    });
 
     setIsTeamsEdit(false);
   };
@@ -200,9 +218,9 @@ const Users = ({
   };
 
   const getDisplayNameComponent = () => {
-    if (isAdminUser) {
+    if (isAdminUser || isLoggedinUser) {
       return (
-        <div className="tw-mt-4 tw-w-full tw-text-center">
+        <div className="tw-mt-4 tw-w-full">
           {isDisplayNameEdit ? (
             <div className="tw-flex tw-items-center tw-gap-1">
               <input
@@ -266,7 +284,7 @@ const Users = ({
   };
 
   const getDescriptionComponent = () => {
-    if (isAdminUser) {
+    if (isAdminUser || isLoggedinUser) {
       return (
         <Description
           description={userData.description || ''}
@@ -389,20 +407,31 @@ const Users = ({
   };
 
   const getRolesComponent = () => {
+    const userRolesOption = roles?.map((role) => ({
+      label: getEntityName(role as unknown as EntityReference),
+      value: role.id,
+    }));
+    if (!userData.isAdmin) {
+      userRolesOption.push({
+        label: TERM_ADMIN,
+        value: toLower(TERM_ADMIN),
+      });
+    }
+
     const rolesElement = (
       <Fragment>
+        {userData.isAdmin && (
+          <div className="tw-mb-2 tw-flex tw-items-center tw-gap-2">
+            <SVGIcons alt="icon" className="tw-w-4" icon={Icons.USERS} />
+            <span>{TERM_ADMIN}</span>
+          </div>
+        )}
         {userData.roles?.map((role, i) => (
           <div className="tw-mb-2 tw-flex tw-items-center tw-gap-2" key={i}>
             <SVGIcons alt="icon" className="tw-w-4" icon={Icons.USERS} />
             <span>{getEntityName(role)}</span>
           </div>
         ))}
-        {userData.isAdmin && (
-          <div className="tw-mb-2 tw-flex tw-items-center tw-gap-2">
-            <SVGIcons alt="icon" className="tw-w-4" icon={Icons.USERS} />
-            <span>Admin</span>
-          </div>
-        )}
       </Fragment>
     );
 
@@ -443,10 +472,7 @@ const Users = ({
                   aria-label="Select roles"
                   className="tw-ml-1"
                   isSearchable={false}
-                  options={roles?.map((role) => ({
-                    label: getEntityName(role as unknown as EntityReference),
-                    value: role.id,
-                  }))}
+                  options={userRolesOption}
                   placeholder="Roles..."
                   styles={reactSingleSelectCustomStyle}
                   value={selectedRoles}
@@ -493,7 +519,7 @@ const Users = ({
   const fetchLeftPanel = () => {
     return (
       <div className="tw-pt-4" data-testid="left-panel">
-        <div className="tw-pb-4 tw-mb-4 tw-border-b tw-flex tw-flex-col tw-items-center">
+        <div className="tw-pb-4 tw-mb-4 tw-border-b tw-flex tw-flex-col">
           {userData.profile?.images?.image ? (
             <div className="tw-h-28 tw-w-28">
               <img
@@ -511,7 +537,7 @@ const Users = ({
           )}
           {getDisplayNameComponent()}
           <p className="tw-mt-2">{userData.email}</p>
-          {getDescriptionComponent()}
+          <div className="tw--ml-5">{getDescriptionComponent()}</div>
         </div>
         {getTeamsComponent()}
         {getRolesComponent()}
@@ -623,8 +649,8 @@ const Users = ({
     ];
     if (userData.isAdmin) {
       defaultRoles.push({
-        label: 'Admin',
-        value: 'admin',
+        label: TERM_ADMIN,
+        value: toLower(TERM_ADMIN),
       });
     }
     setSelectedRoles(defaultRoles);
@@ -682,14 +708,14 @@ const Users = ({
           getEntityData(
             getAssets(userData?.owns || []),
             `${
-              userData?.displayName || userData?.name || 'User'
+              userData?.displayName || userData?.name || TERM_USER
             } does not own anything yet`
           )}
         {activeTab === 3 &&
           getEntityData(
             getAssets(userData?.follows || []),
             `${
-              userData?.displayName || userData?.name || 'User'
+              userData?.displayName || userData?.name || TERM_USER
             } does not follow anything yet`
           )}
       </div>

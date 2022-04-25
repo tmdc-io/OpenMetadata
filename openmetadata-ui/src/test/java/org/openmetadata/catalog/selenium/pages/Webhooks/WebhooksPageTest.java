@@ -9,9 +9,10 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.openmetadata.catalog.selenium.events.*;
-import org.openmetadata.catalog.selenium.objectRepository.*;
-import org.openmetadata.catalog.selenium.properties.*;
+import org.openmetadata.catalog.selenium.events.Events;
+import org.openmetadata.catalog.selenium.objectRepository.Common;
+import org.openmetadata.catalog.selenium.objectRepository.Webhooks;
+import org.openmetadata.catalog.selenium.properties.Property;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -23,7 +24,7 @@ import org.testng.Assert;
 
 @Order(20)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class WebhooksPageTest {
+class WebhooksPageTest {
 
   static WebDriver webDriver;
   static Common common;
@@ -37,7 +38,7 @@ public class WebhooksPageTest {
   String webDriverPath = Property.getInstance().getWebDriverPath();
 
   @BeforeEach
-  public void openMetadataWindow() {
+  void openMetadataWindow() {
     System.setProperty(webDriverInstance, webDriverPath);
     ChromeOptions options = new ChromeOptions();
     options.addArguments("--headless");
@@ -68,17 +69,17 @@ public class WebhooksPageTest {
     Events.click(webDriver, webhooks.addWebhook());
     Events.sendKeys(webDriver, webhooks.name(), name);
     Events.click(webDriver, webhooks.descriptionBox());
-    Events.sendKeys(webDriver, webhooks.focusedDescriptionBox(), "test");
+    Events.sendKeys(webDriver, webhooks.focusedDescriptionBox(), faker.address().toString());
     Events.sendKeys(webDriver, webhooks.endpoint(), "https://www.example.com");
     Events.click(webDriver, webhooks.checkbox());
-    Thread.sleep(waitTime);
     Events.click(webDriver, webhooks.entityCreatedMenu());
     Events.click(webDriver, webhooks.allEntities());
     actions.click();
     actions.perform();
     Events.click(webDriver, common.saveWebhook());
-    Thread.sleep(2000);
-    WebElement checkName = wait.until(ExpectedConditions.presenceOfElementLocated(webhooks.checkWebhook()));
+    Thread.sleep(waitTime);
+    WebElement checkName = wait.until(ExpectedConditions.presenceOfElementLocated(webhooks.checkWebhook(name)));
+    Thread.sleep(waitTime);
     Assert.assertTrue(checkName.isDisplayed());
     Assert.assertEquals(checkName.getText(), name);
   }
@@ -101,7 +102,7 @@ public class WebhooksPageTest {
       actions.click();
       actions.perform();
       Events.click(webDriver, common.saveWebhook());
-      Thread.sleep(2000);
+      Thread.sleep(waitTime);
     }
     WebElement errorMessage = webDriver.findElement(webhooks.toast());
     Assert.assertTrue(errorMessage.isDisplayed());
@@ -168,7 +169,7 @@ public class WebhooksPageTest {
   }
 
   @AfterEach
-  public void closeTabs() {
+  void closeTabs() {
     ArrayList<String> tabs = new ArrayList<>(webDriver.getWindowHandles());
     String originalHandle = webDriver.getWindowHandle();
     for (String handle : webDriver.getWindowHandles()) {

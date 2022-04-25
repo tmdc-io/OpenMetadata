@@ -282,6 +282,7 @@ const TeamsAndUsersPage = () => {
         })
         .finally(() => {
           setIsLoading(false);
+          setIsRightPannelLoading(false);
         });
     }
   };
@@ -386,13 +387,15 @@ const TeamsAndUsersPage = () => {
   };
 
   const handleJoinTeamClick = (id: string, data: Operation[]) => {
+    setIsRightPannelLoading(true);
     updateUserDetail(id, data)
       .then((res: AxiosResponse) => {
         if (res.data) {
           AppState.updateUserDetails(res.data);
-          fetchCurrentTeam(teamAndUser);
+          fetchCurrentTeam(currentTeam?.name || '', true);
           showSuccessToast(
-            jsonData['api-success-messages']['join-team-success']
+            jsonData['api-success-messages']['join-team-success'],
+            2000
           );
         } else {
           throw jsonData['api-error-messages']['join-team-error'];
@@ -401,6 +404,34 @@ const TeamsAndUsersPage = () => {
       .catch((err: AxiosError) => {
         showErrorToast(err, jsonData['api-error-messages']['join-team-error']);
       });
+  };
+
+  const handleLeaveTeamClick = (id: string, data: Operation[]) => {
+    setIsRightPannelLoading(true);
+
+    return new Promise<void>((resolve, reject) => {
+      updateUserDetail(id, data)
+        .then((res: AxiosResponse) => {
+          if (res.data) {
+            AppState.updateUserDetails(res.data);
+            fetchCurrentTeam(currentTeam?.name || '', true);
+            showSuccessToast(
+              jsonData['api-success-messages']['leave-team-success'],
+              2000
+            );
+            resolve();
+          } else {
+            throw jsonData['api-error-messages']['leave-team-error'];
+          }
+        })
+        .catch((err: AxiosError) => {
+          showErrorToast(
+            err,
+            jsonData['api-error-messages']['leave-team-error']
+          );
+          reject();
+        });
+    });
   };
 
   /**
@@ -576,6 +607,12 @@ const TeamsAndUsersPage = () => {
     }
   };
 
+  const afterDeleteAction = () => {
+    setIsLoading(true);
+    history.push(getTeamAndUserDetailsPath());
+    fetchTeams();
+  };
+
   useEffect(() => {
     if (teamAndUser) {
       if (Object.values(UserType).includes(teamAndUser as UserType)) {
@@ -606,6 +643,7 @@ const TeamsAndUsersPage = () => {
           activeUserTabHandler={activeUserTabHandler}
           addUsersToTeam={addUsersToTeam}
           admins={admins}
+          afterDeleteAction={afterDeleteAction}
           bots={bots}
           changeCurrentTeam={changeCurrentTeam}
           createNewTeam={createNewTeam}
@@ -620,6 +658,7 @@ const TeamsAndUsersPage = () => {
           handleAddUser={handleAddUser}
           handleDeleteUser={handleDeleteUser}
           handleJoinTeamClick={handleJoinTeamClick}
+          handleLeaveTeamClick={handleLeaveTeamClick}
           handleTeamUsersSearchAction={handleTeamUsersSearchAction}
           handleUserSearchTerm={handleUserSearchTerm}
           hasAccess={isAuthDisabled || isAdminUser}

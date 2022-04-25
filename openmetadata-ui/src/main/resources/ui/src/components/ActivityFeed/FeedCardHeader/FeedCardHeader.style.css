@@ -11,6 +11,10 @@
  *  limitations under the License.
  */
 
-package org.openmetadata.catalog.resources.databases;
+.thread-author {
+  font-weight: 600;
+}
 
-public class TableUtil {}
+.thread-author:hover {
+  text-decoration: underline;
+}

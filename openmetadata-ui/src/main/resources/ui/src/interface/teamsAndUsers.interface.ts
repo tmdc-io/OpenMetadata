@@ -66,6 +66,7 @@ export interface TeamsAndUsersProps {
   descriptionHandler: (value: boolean) => void;
   onDescriptionUpdate: (value: string) => void;
   handleJoinTeamClick: (id: string, data: Operation[]) => void;
+  handleLeaveTeamClick: (id: string, data: Operation[]) => Promise<void>;
   isAddingUsers: boolean;
   getUniqueUserList: () => Array<UserTeams>;
   addUsersToTeam: (data: Array<UserTeams>) => void;
@@ -74,6 +75,7 @@ export interface TeamsAndUsersProps {
   handleUserSearchTerm: (value: string) => void;
   userSearchTerm: string;
   handleAddNewUser: () => void;
+  afterDeleteAction: () => void;
 }
 
 export interface TeamDetailsProp {
@@ -104,10 +106,9 @@ export interface TeamDetailsProp {
     cursorValue: string | number,
     activePage?: number
   ) => void;
-  isAddingUsers: boolean;
-  getUniqueUserList: () => Array<UserTeams>;
-  addUsersToTeam: (data: Array<UserTeams>) => void;
   handleAddUser: (data: boolean) => void;
+  afterDeleteAction: () => void;
   removeUserFromTeam: (id: string) => Promise<void>;
   handleJoinTeamClick: (id: string, data: Operation[]) => void;
+  handleLeaveTeamClick: (id: string, data: Operation[]) => Promise<void>;
 }

@@ -28,3 +28,15 @@ class DynamoClient:
 class SalesforceClient:
     def __init__(self, client) -> None:
         self.client = client
+
+
+@dataclass
+class DeltaLakeClient:
+    def __init__(self, client) -> None:
+        self.client = client
+
+
+@dataclass
+class KafkaClient:
+    def __init__(self, client) -> None:
+        self.client = client

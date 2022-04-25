@@ -67,6 +67,7 @@ import {
   getEntityName,
   hasEditAccess,
   isEven,
+  pluralize,
 } from '../../utils/CommonUtils';
 import { getInfoElements } from '../../utils/EntityUtils';
 import {
@@ -210,6 +211,25 @@ const ServicePage: FunctionComponent = () => {
     }
   };
 
+  const getAirflowEndpoint = () => {
+    fetchAirflowConfig()
+      .then((res) => {
+        if (res.data?.apiEndpoint) {
+          setAirflowEndpoint(res.data.apiEndpoint);
+        } else {
+          setAirflowEndpoint('');
+
+          throw jsonData['api-error-messages']['unexpected-server-response'];
+        }
+      })
+      .catch((err: AxiosError) => {
+        showErrorToast(
+          err,
+          jsonData['api-error-messages']['fetch-airflow-config-error']
+        );
+      });
+  };
+
   const getAllIngestionWorkflows = (paging?: string) => {
     setIsloading(true);
     getIngestionPipelines(['owner', 'pipelineStatuses'], serviceFQN, paging)
@@ -230,25 +250,11 @@ const ServicePage: FunctionComponent = () => {
           jsonData['api-error-messages']['fetch-ingestion-error']
         );
       })
-      .finally(() => setIsloading(false));
-  };
-
-  const getAirflowEndpoint = () => {
-    fetchAirflowConfig()
-      .then((res) => {
-        if (res.data?.apiEndpoint) {
-          setAirflowEndpoint(res.data.apiEndpoint);
-        } else {
-          setAirflowEndpoint('');
-
-          throw jsonData['api-error-messages']['unexpected-server-response'];
+      .finally(() => {
+        setIsloading(false);
+        if (!airflowEndpoint) {
+          getAirflowEndpoint();
         }
-      })
-      .catch((err: AxiosError) => {
-        showErrorToast(
-          err,
-          jsonData['api-error-messages']['fetch-airflow-config-error']
-        );
       });
   };
 
@@ -628,6 +634,43 @@ const ServicePage: FunctionComponent = () => {
     }
   };
 
+  const getDeleteEntityMessage = () => {
+    const service = serviceName?.slice(0, -1);
+
+    switch (serviceName) {
+      case ServiceCategory.DATABASE_SERVICES:
+        return `Deleting this ${service} will also delete ${pluralize(
+          instanceCount,
+          'database',
+          's'
+        )}`;
+
+      case ServiceCategory.MESSAGING_SERVICES:
+        return `Deleting this ${service} will also delete ${pluralize(
+          instanceCount,
+          'topic',
+          's'
+        )}`;
+
+      case ServiceCategory.DASHBOARD_SERVICES:
+        return `Deleting this ${service} will also delete ${pluralize(
+          instanceCount,
+          'dashboard',
+          's'
+        )}`;
+
+      case ServiceCategory.PIPELINE_SERVICES:
+        return `Deleting this ${service} will also delete ${pluralize(
+          instanceCount,
+          'pipeline',
+          's'
+        )}`;
+
+      default:
+        return;
+    }
+  };
+
   useEffect(() => {
     setServiceName(serviceCategory || getServiceCategoryFromType(serviceType));
   }, [serviceCategory, serviceType]);
@@ -678,7 +721,6 @@ const ServicePage: FunctionComponent = () => {
       // getDatabaseServices();
       getAllIngestionWorkflows();
     }
-    getAirflowEndpoint();
   }, []);
 
   const onCancel = () => {
@@ -744,24 +786,28 @@ const ServicePage: FunctionComponent = () => {
       owner,
     };
 
-    return new Promise<void>((_, reject) => {
+    return new Promise<void>((resolve, reject) => {
       updateService(serviceName, serviceDetails?.id, updatedData)
         .then((res: AxiosResponse) => {
           if (res.data) {
             setServiceDetails(res.data);
+
+            return resolve();
           } else {
             showErrorToast(
               jsonData['api-error-messages']['update-owner-error']
             );
           }
-          reject();
+
+          return reject();
         })
         .catch((error: AxiosError) => {
           showErrorToast(
             error,
             jsonData['api-error-messages']['update-owner-error']
           );
-          reject();
+
+          return reject();
         });
     });
   };
@@ -960,6 +1006,7 @@ const ServicePage: FunctionComponent = () => {
                       hideTier
                       isRecursiveDelete
                       currentUser={serviceDetails?.owner?.id}
+                      deletEntityMessage={getDeleteEntityMessage()}
                       entityId={serviceDetails?.id}
                       entityName={serviceDetails?.name}
                       entityType={serviceCategory.slice(0, -1)}

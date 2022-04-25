@@ -21,7 +21,7 @@ import org.testng.Assert;
 
 @Order(18)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class UsersPageTest {
+class UsersPageTest {
 
   static WebDriver webDriver;
   static Common common;
@@ -34,7 +34,7 @@ public class UsersPageTest {
   String webDriverPath = Property.getInstance().getWebDriverPath();
 
   @BeforeEach
-  public void openMetadataWindow() {
+  void openMetadataWindow() {
     System.setProperty(webDriverInstance, webDriverPath);
     ChromeOptions options = new ChromeOptions();
     options.addArguments("--headless");
@@ -48,7 +48,7 @@ public class UsersPageTest {
     webDriver.get(url);
   }
 
-  public void openUsersPage() throws InterruptedException {
+  void openUsersPage() throws InterruptedException {
     Events.click(webDriver, common.closeWhatsNew()); // Close What's new
     Events.click(webDriver, common.headerSettings()); // Setting
     Events.click(webDriver, common.headerSettingsMenu("Teams & Users"));
@@ -57,16 +57,19 @@ public class UsersPageTest {
 
   @Test
   @Order(1)
-  public void addAdminCheckCountCheck() throws InterruptedException {
+  void addAdminCheckCountCheck() throws InterruptedException {
     openUsersPage();
     Events.click(webDriver, userPage.users());
     Events.click(webDriver, userPage.selectUser());
-    Events.click(webDriver, userPage.rolesList());
-    Events.click(webDriver, userPage.selectRole("Admin"));
-    actions.moveToElement(userPage.closeCheckBoxDropDown(), 100, 200);
-    actions.click();
-    actions.perform();
-    Events.click(webDriver, common.descriptionSaveButton());
+    Events.click(webDriver, userPage.editRole());
+    Events.click(webDriver, common.containsText("Data Consumer"));
+    Events.click(webDriver, common.containsText("Admin"));
+    Events.click(webDriver, userPage.saveRole());
+    Thread.sleep(waitTime);
+    Events.click(webDriver, common.headerSettings());
+    Events.click(webDriver, common.headerSettingsTeams());
+    Events.click(webDriver, userPage.users());
+    webDriver.navigate().refresh();
     Thread.sleep(waitTime);
     Object afterUsersCount = webDriver.findElement(userPage.userFilterCount()).getAttribute("innerHTML");
     Thread.sleep(waitTime);
@@ -77,19 +80,21 @@ public class UsersPageTest {
 
   @Test
   @Order(2)
-  public void removeAdminCheckCountCheck() throws InterruptedException {
+  void removeAdminCheckCountCheck() throws InterruptedException {
     openUsersPage();
     Events.click(webDriver, userPage.users());
     Events.click(webDriver, userPage.selectUser());
-    Events.click(webDriver, userPage.rolesList());
-    Events.click(webDriver, userPage.selectRole("Admin"));
-    actions.moveToElement(userPage.closeCheckBoxDropDown(), 100, 200);
-    actions.click();
-    actions.perform();
-    Events.click(webDriver, common.descriptionSaveButton());
-    Thread.sleep(1000);
-    Object afterAdminCount = webDriver.findElement(userPage.adminFilterCount()).getAttribute("innerHTML");
-    Thread.sleep(1000);
+    Events.click(webDriver, userPage.editRole());
+    Events.click(webDriver, userPage.removeRole());
+    Events.click(webDriver, userPage.saveRole());
+    Thread.sleep(waitTime);
+    Events.click(webDriver, common.headerSettings());
+    Events.click(webDriver, common.headerSettingsTeams());
+    Events.click(webDriver, userPage.users());
+    webDriver.navigate().refresh();
+    Thread.sleep(waitTime);
+    Object afterAdminCount = webDriver.findElement(userPage.adminFilterCountAfterDelete()).getAttribute("innerHTML");
+    Thread.sleep(waitTime);
     Assert.assertEquals(afterAdminCount, "0");
     Object afterUsersCount = webDriver.findElement(userPage.userFilterCount()).getAttribute("innerHTML");
     Assert.assertEquals(afterUsersCount, "101");
@@ -97,7 +102,7 @@ public class UsersPageTest {
 
   @Test
   @Order(3)
-  public void caseSensitiveSearchCheck() throws InterruptedException {
+  void caseSensitiveSearchCheck() throws InterruptedException {
     openUsersPage();
     Events.click(webDriver, userPage.users());
     Events.sendKeys(webDriver, userPage.userListSearchBar(), "AaR");
@@ -107,7 +112,7 @@ public class UsersPageTest {
   }
 
   @AfterEach
-  public void closeTabs() {
+  void closeTabs() {
     ArrayList<String> tabs = new ArrayList<>(webDriver.getWindowHandles());
     String originalHandle = webDriver.getWindowHandle();
     for (String handle : webDriver.getWindowHandles()) {

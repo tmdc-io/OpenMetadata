@@ -24,7 +24,7 @@ import org.testng.Assert;
 
 @Order(21)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class GlossaryPageTest {
+class GlossaryPageTest {
 
   static WebDriver webDriver;
   static Common common;
@@ -40,7 +40,7 @@ public class GlossaryPageTest {
   String webDriverPath = Property.getInstance().getWebDriverPath();
 
   @BeforeEach
-  public void openMetadataWindow() {
+  void openMetadataWindow() {
     System.setProperty(webDriverInstance, webDriverPath);
     ChromeOptions options = new ChromeOptions();
     options.addArguments("--headless");
@@ -174,7 +174,6 @@ public class GlossaryPageTest {
     openGlossaryPage();
     Events.click(webDriver, common.containsText(glossaryName));
     Events.click(webDriver, common.addTagButton());
-    Events.click(webDriver, common.selectUser());
     Events.sendKeys(webDriver, common.displayName(), termName);
     Events.click(webDriver, common.descriptionBoldButton());
     Events.sendKeys(webDriver, common.focusedDescriptionBox(), faker.address().toString());
@@ -188,11 +187,6 @@ public class GlossaryPageTest {
     Events.sendKeys(webDriver, common.urlLink(), faker.address().toString());
     Events.sendKeys(webDriver, common.linkText(), faker.address().firstName());
     Events.click(webDriver, common.okButton());
-    Events.click(webDriver, glossary.addReviewerButton());
-    for (int i = 1; i <= 2; i++) {
-      Events.click(webDriver, glossary.checkboxAddUser(i));
-    }
-    Events.click(webDriver, common.descriptionSaveButton());
     Events.click(webDriver, glossary.saveGlossaryTerm());
   }
 
@@ -200,6 +194,8 @@ public class GlossaryPageTest {
   @Order(9)
   void addTagToTerm() throws InterruptedException {
     openGlossaryPage();
+    Events.click(webDriver, common.containsText(glossaryName));
+    Events.click(webDriver, common.containsText(glossaryName));
     Events.click(webDriver, common.containsText(termName));
     Events.click(webDriver, common.breadCrumbTags());
     Events.click(webDriver, common.enterAssociatedTagName());
@@ -217,10 +213,18 @@ public class GlossaryPageTest {
   @Order(10)
   void addTermReviewer() throws InterruptedException {
     openGlossaryPage();
+    Events.click(webDriver, common.containsText(glossaryName));
+    Events.click(webDriver, common.containsText(glossaryName));
     Events.click(webDriver, common.containsText(termName));
-    Events.click(webDriver, glossary.reviewers());
+    Events.click(webDriver, common.manage());
     Events.click(webDriver, common.addGlossaryReviewer());
+    Thread.sleep(waitTime);
+    Events.click(webDriver, glossary.checkboxAddUser(1));
+    Thread.sleep(waitTime);
+    Events.click(webDriver, glossary.checkboxAddUser(2));
+    Thread.sleep(waitTime);
     Events.click(webDriver, glossary.checkboxAddUser(3));
+    Thread.sleep(waitTime);
     Events.click(webDriver, glossary.saveTermReviewer());
     Thread.sleep(waitTime);
     Object reviewerCount = webDriver.findElements(common.reviewCount()).size();
@@ -231,8 +235,10 @@ public class GlossaryPageTest {
   @Order(11)
   void deleteTermReviewer() throws InterruptedException {
     openGlossaryPage();
+    Events.click(webDriver, common.containsText(glossaryName));
+    Events.click(webDriver, common.containsText(glossaryName));
     Events.click(webDriver, common.containsText(termName));
-    Events.click(webDriver, glossary.reviewers());
+    Events.click(webDriver, common.manage());
     Thread.sleep(waitTime);
     actions.moveToElement(webDriver.findElement(common.removeAssociatedTag())).perform();
     Events.click(webDriver, common.removeAssociatedTag());
@@ -245,14 +251,15 @@ public class GlossaryPageTest {
   @Order(12)
   void removeAddedReviewersToTerm() throws InterruptedException {
     openGlossaryPage();
+    Events.click(webDriver, common.containsText(glossaryName));
+    Events.click(webDriver, common.containsText(glossaryName));
     Events.click(webDriver, common.containsText(termName));
-    Events.click(webDriver, glossary.reviewers());
-    Events.click(webDriver, common.addGlossaryReviewer());
+    Events.click(webDriver, common.manage());
+    actions.moveToElement(webDriver.findElement(common.removeAssociatedTag())).perform();
     for (int i = 1; i <= 2; i++) {
-      Events.click(webDriver, glossary.checkboxAddUser(i));
+      Events.click(webDriver, common.removeAssociatedTag());
+      Thread.sleep(waitTime);
     }
-    Events.click(webDriver, glossary.saveTermReviewer());
-    Thread.sleep(waitTime);
     Object reviewerCount = webDriver.findElements(common.reviewCount()).size();
     Assert.assertEquals(reviewerCount.toString(), "0");
   }
@@ -261,6 +268,8 @@ public class GlossaryPageTest {
   @Order(13)
   void removeAddedTagsToTerm() throws InterruptedException {
     openGlossaryPage();
+    Events.click(webDriver, common.containsText(glossaryName));
+    Events.click(webDriver, common.containsText(glossaryName));
     Events.click(webDriver, common.containsText(termName));
     Events.click(webDriver, glossary.editGlossaryTag());
     for (int i = 0; i < 2; i++) {
@@ -273,7 +282,7 @@ public class GlossaryPageTest {
   }
 
   @AfterEach
-  public void closeTabs() {
+  void closeTabs() {
     ArrayList<String> tabs = new ArrayList<>(webDriver.getWindowHandles());
     String originalHandle = webDriver.getWindowHandle();
     for (String handle : webDriver.getWindowHandles()) {

@@ -32,7 +32,7 @@ public class Common {
   By serviceUsername = By.cssSelector("[id='root_username']");
   By servicePassword = By.cssSelector("[id='root_password']");
   By nextButton = By.cssSelector("[data-testid='next-button']");
-  By saveServiceButton = By.cssSelector("[data-testid='deploy-button']");
+  By saveServiceButton = By.cssSelector("[data-testid='submit-btn']");
   By saveEditedService = By.cssSelector("[data-testid='save-button']");
   By saveConnectionConfig = By.cssSelector("[data-testid='saveManageTab']");
   By searchResults = By.cssSelector("[data-testid='search-results']");
@@ -54,7 +54,7 @@ public class Common {
   By tagCount = By.xpath("//div[@data-testid='tag-container']/div/div");
   By errorMessage = By.cssSelector("[data-testid='error-message']");
   By matchesInDescription = By.xpath("(//div[@data-testid='matches-stats'][1])/span[3]");
-  By tagCountSearch = By.xpath("(//div[@data-testid='description-text'][1])/div/span/span[@class='text-highlighter']");
+  By tagCountSearch = By.xpath("(//div[@data-testid='viewer-container'])[1]//span[@class='text-highlighter']");
   By tagFilterCount = By.xpath("//div[@data-testid='filter-containers-2']/label");
   By noSearchResult = By.cssSelector("[data-testid='no-search-results']");
   By resultsCount = By.xpath("//div[@data-testid='search-container']/div");
@@ -102,6 +102,7 @@ public class Common {
   By hostPort = By.cssSelector("[id='root_hostPort']");
   By addIngestion = By.cssSelector("[data-testid='add-ingestion-button']");
   By deployButton = By.cssSelector("[data-testid='deploy-button']");
+  By confirmButton = By.cssSelector("[data-testid='confirm-button']");
 
   public List<WebElement> versionRadioButton() {
     return webDriver.findElements(versionRadioButton);
